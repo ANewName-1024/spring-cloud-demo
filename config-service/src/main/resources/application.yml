@@ -5,35 +5,49 @@ spring:
   application:
     name: config-service
   datasource:
-    url: jdbc:postgresql://${DB_HOST}:${DB_PORT:8432}/${DB_NAME:business_db}?ssl=true&sslmode=verify-full&sslrootcert=${SSL_CERT_PATH}
-    username: ${DB_USERNAME:business}
-    password: ${DB_PASSWORD}
+    url: jdbc:postgresql://8.137.116.121:8432/business_db?ssl=false
+    username: business
+    password: NewPass2024
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: false
+  cloud:
+    config:
+      server:
+        # 使用 Git 仓库存储配置
+        git:
+          uri: https://github.com/ANewName-1024/spring-cloud-config
+          default-label: master
+          search-paths: config
+          # 私有仓库需要配置认证
+          # username: your-github-username
+          # password: your-github-token
+        # 使用本地文件系统（备用）
+        native:
+          search-locations: classpath:/config,file:./config
+    discovery:
+      enabled: false
+  security:
+    user:
+      name: admin
+      password: admin
+  actuator:
+    endpoints:
+      web:
+        exposure:
+          include: "*"
+    endpoint:
+      health:
+        show-details: always
 
 # 加密配置
 encryption:
-  algorithm: ${ENCRYPTION_ALGORITHM:SM4}
-  default-algorithm: SM4
-  root-key-type: ${ROOT_KEY_TYPE:SOFTWARE}  # SOFTWARE / HARDWARE
-  root-key-file: ${ROOT_KEY_FILE:}
-  working-key-rotation-days: ${WORKING_KEY_ROTATION_DAYS:90}
-
-# Jasypt 加密配置 (兼容旧版)
-jasypt:
-  encryptor:
-    password: ${JASYPT_PASSWORD:ConfigSecretKey2024}
-    algorithm: PBEWithMD5AndDES
-
-eureka:
-  client:
-    service-url:
-      defaultZone: http://${EUREKA_USER:admin}:${EUREKA_PASSWORD}@${EUREKA_HOST}:${EUREKA_PORT:9000}/eureka/
-  instance:
-    prefer-ip-address: true
+  algorithm: AES
+  default-algorithm: AES
+  root-key-type: SOFTWARE
+  working-key-rotation-days: 90
 
 # OpenClaw 配置
 openclaw:
@@ -43,5 +57,5 @@ openclaw:
 # JWT 配置
 config:
   jwt:
-    secret: ${CONFIG_JWT_SECRET:ConfigServiceJWTSecretKey2024ChangeInProduction}
-    expiration: ${CONFIG_JWT_EXPIRATION:86400000}
+    secret: ConfigServiceJWTSecret2024
+    expiration: 86400000

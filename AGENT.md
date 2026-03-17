@@ -12,6 +12,7 @@
 | Spring Boot | 3.2.0 | 基础框架 |
 | Spring Cloud | 2023.0.0 | 微服务框架 |
 | Spring Cloud Gateway | 4.1.0 | API 网关 |
+| Spring Cloud Config | 2023.0.0 | 配置中心 |
 | Spring Security | 6.2.0 | 安全框架 |
 | PostgreSQL | - | 数据库 |
 | JWT/jjwt | 0.12.3 | Token 签发 |
@@ -112,6 +113,13 @@ springcloud-demo/
 - OIDC JWT 验证
 - JWKS 公钥获取
 - 用户信息传递
+
+### 6. Spring Cloud Config
+
+- 分布式配置中心
+- 配置加密/解密
+- Git 仓库存储配置
+- 多环境配置支持
 
 ## 配置说明
 
