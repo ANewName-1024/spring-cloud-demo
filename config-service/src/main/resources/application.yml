@@ -5,31 +5,7 @@ spring:
   application:
     name: config-service
   
-  # 禁用默认的 composite 配置
-  profiles:
-    active: native
-  
-  # Spring Cloud Config Server 配置 - 使用本地文件系统
-  cloud:
-    config:
-      server:
-        # 使用本地文件系统（不需要 Git）
-        native:
-          search-locations: file:///${CONFIG_REPO_PATH:D:/Cache/config-repo}
-        # 禁用 git
-        git:
-          enabled: false
-        # 启用健康检查
-        health:
-          repositories:
-            - name: user-service
-              label: master
-            - name: gateway
-              label: master
-            - name: ops-service
-              label: master
-  
-  # 数据源配置 - 自身配置（不通过配置中心）
+  # 数据源配置 - 自身配置
   datasource:
     url: jdbc:postgresql://${DB_HOST:8.137.116.121}:${DB_PORT:8432}/${DB_NAME:business_db}?ssl=false
     username: ${DB_USERNAME:business}
@@ -67,4 +43,3 @@ management:
 logging:
   level:
     com.example.config: INFO
-    org.springframework.cloud.config: DEBUG
