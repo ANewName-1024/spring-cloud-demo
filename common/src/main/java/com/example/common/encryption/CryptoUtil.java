@@ -136,13 +136,7 @@ public class CryptoUtil {
      * @return bcrypt 哈希值 (包含salt)
      */
     public String hashPassword(String password) {
-        try {
-            org.mindrot.jbcrypt.BCrypt.Password bcryptPassword = 
-                org.mindrot.jbcrypt.BCrypt.hashpw(password, org.mindrot.jbcrypt.BCrypt.gensalt(BCRYPT_STRENGTH));
-            return new String(bcryptPassword);
-        } catch (Exception e) {
-            throw new RuntimeException("密码哈希失败", e);
-        }
+        return org.mindrot.jbcrypt.BCrypt.hashpw(password, org.mindrot.jbcrypt.BCrypt.gensalt(BCRYPT_STRENGTH));
     }
 
     /**
@@ -152,11 +146,7 @@ public class CryptoUtil {
      * @return 是否匹配
      */
     public boolean verifyPassword(String password, String hashedPassword) {
-        try {
-            return org.mindrot.jbcrypt.BCrypt.checkpw(password, hashedPassword);
-        } catch (Exception e) {
-            return false;
-        }
+        return org.mindrot.jbcrypt.BCrypt.checkpw(password, hashedPassword);
     }
 
     // ==================== 密钥派生 (PBKDF2) ====================
