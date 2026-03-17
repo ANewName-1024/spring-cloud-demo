@@ -5,13 +5,13 @@ spring:
   application:
     name: user-service
   datasource:
-    url: jdbc:postgresql://8.137.116.121:8432/business_db?ssl=true&sslmode=verify-full&sslrootcert=D:/java_project/springcloud-demo/server.crt
-    username: business
-    password: Business@123
+    url: jdbc:postgresql://${DB_HOST:8.137.116.121}:${DB_PORT:8432}/${DB_NAME:business_db}?ssl=true&sslmode=verify-full&sslrootcert=${SSL_CERT_PATH:D:/java_project/springcloud-demo/server.crt}
+    username: ${DB_USERNAME:business}
+    password: ${DB_PASSWORD:Business@123}
     driver-class-name: org.postgresql.Driver
     hikari:
       ssl: true
-      sslrootcert: D:/java_project/springcloud-demo/server.crt
+      sslrootcert: ${SSL_CERT_PATH:D:/java_project/springcloud-demo/server.crt}
   jpa:
     hibernate:
       ddl-auto: update
@@ -20,17 +20,17 @@ spring:
 eureka:
   client:
     service-url:
-      defaultZone: http://admin:Eureka%402024%21Secure@8.137.116.121:9000/eureka/
+      defaultZone: http://${EUREKA_USER:admin}:${EUREKA_PASSWORD:Eureka@2024!Secure}@${EUREKA_HOST:8.137.116.121}:${EUREKA_PORT:9000}/eureka/
   instance:
     prefer-ip-address: true
     instance-id: ${spring.application.name}:${server.port}
 
 jwt:
-  secret: mySecretKeyForJWTTokenGenerationMustBeLongEnough12345
-  expiration: 86400000
+  secret: ${JWT_SECRET:your-secret-key-change-in-production}
+  expiration: ${JWT_EXPIRATION:86400000}
 
 # 注册配置
 auth:
   register:
-    invite-code-required: false
-    invite-codes: "invite2024,admin123"
+    invite-code-required: ${INVITE_CODE_REQUIRED:false}
+    invite-codes: ${INVITE_CODES:}
