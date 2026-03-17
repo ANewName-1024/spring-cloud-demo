@@ -17,6 +17,7 @@
         <module>gateway</module>
         <module>user-service</module>
         <module>config-service</module>
+        <module>ops-service</module>
     </modules>
 
     <properties>

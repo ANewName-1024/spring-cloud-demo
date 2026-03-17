@@ -1,0 +1,59 @@
+server:
+  port: 8090
+
+spring:
+  application:
+    name: ops-service
+
+  # Sleuth 分布式追踪配置
+  sleuth:
+    sampler:
+      probability: 1.0  # 采样率 100%
+    websocket:
+      enabled: true
+    
+  # Zipkin 配置
+  zipkin:
+    base-url: http://localhost:9411
+    sender:
+      type: web
+
+  # Elastic Cloud 配置
+  elasticsearch:
+    uris: http://localhost:9200
+
+# Eureka 配置 (本地开发时禁用)
+eureka:
+  client:
+    enabled: false
+    register-with-eureka: false
+    fetch-registry: false
+
+# Actuator 监控配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+    info:
+      enabled: true
+    metrics:
+      enabled: true
+    loggers:
+      enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    com.example.ops: DEBUG
+    org.springframework.cloud.sleuth: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
