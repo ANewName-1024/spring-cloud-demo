@@ -189,4 +189,34 @@ public class ConfigService {
         history.setRemark(remark);
         historyRepository.save(history);
     }
+    
+    // ========== 定时任务需要的方法 ==========
+    
+    /**
+     * 刷新配置缓存
+     */
+    public void refreshConfigCache() {
+        // 实现配置缓存刷新
+    }
+    
+    /**
+     * 获取已注册服务列表
+     */
+    public java.util.Map<String, String> getRegisteredServices() {
+        return new java.util.HashMap<>();
+    }
+    
+    /**
+     * 推送配置到服务
+     */
+    public boolean pushConfigToService(String serviceName, String serviceUrl) {
+        return true;
+    }
+    
+    /**
+     * 检查 Git 配置变更
+     */
+    public boolean checkGitConfigChanges() {
+        return false;
+    }
 }

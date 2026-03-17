@@ -59,3 +59,27 @@ config:
   jwt:
     secret: ConfigServiceJWTSecret2024
     expiration: 86400000
+
+# 定时任务配置
+scheduler:
+  enabled: true  # 启用定时任务
+  
+  # 配置刷新任务
+  config-refresh:
+    enabled: true
+    rate: 300000  # 5 分钟
+  
+  # 密钥轮换任务
+  key-rotation:
+    enabled: true
+    cron: "0 0 2 * * ?"  # 每天凌晨 2 点
+  
+  # 清理任务
+  cleanup:
+    enabled: true
+    cron: "0 0 4 * *"  # 每天凌晨 4 点
+  
+  # 健康检查任务
+  health-check:
+    enabled: true
+    rate: 300000  # 5 分钟
