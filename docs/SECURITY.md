@@ -26,7 +26,7 @@ spring:
 │                    Spring Cloud Config                   │
 │                    (配置中心服务)                         │
 ├─────────────────────────────────────────────────────────┤
-│  1. 配置加密存储 (AES-256)                              │
+│  1. 配置加密存储 (AES-256-GCM)                          │
 │  2. 启动时从配置中心拉取                                 │
 │  3. 使用 master-key 解密                                │
 └─────────────────────────────────────────────────────────┘
@@ -36,18 +36,6 @@ spring:
 1. 配置使用 `{cipher}encrypted-value` 格式
 2. 启动时自动解密
 3. master-key 通过环境变量注入
-
-```yaml
-# config-repo/application.yml
-spring:
-  datasource:
-    password: {cipher}AQBf8mK3...  # 加密存储
-```
-
-```bash
-# 启动命令 (只有 master-key 在环境变量)
-java -jar app.jar --spring.cloud.config.server.encrypt.key=${MASTER_KEY}
-```
 
 ---
 
@@ -61,18 +49,7 @@ services:
     secrets:
       - db_password
       - jwt_secret
-
-secrets:
-  db_password:
-    file: ./secrets/db_password.txt
-  jwt_secret:
-    file: ./secrets/jwt_secret.txt
 ```
-
-**优点**：
-- Docker Swarm 内置加密
-- 不在容器环境变量中暴露
-- 权限控制
 
 ---
 
@@ -85,12 +62,6 @@ secrets:
 └──────────────┘      └──────────────┘      └──────────────┘
 ```
 
-**优点**：
-- 集中管理
-- 审计日志
-- 密钥轮换
-- 支持硬件安全模块 (HSM)
-
 ---
 
 ### 方案四：Vault 方案 (企业级)
@@ -100,112 +71,76 @@ secrets:
 │   应用服务   │ ───▶ │    Vault     │
 │              │      │  (密钥保险库) │
 └──────────────┘      └──────────────┘
-       │                      │
-       │                      ▼
-       │              ┌──────────────┐
-       └─────────────▶│  数据库/文件   │
-                      └──────────────┘
+```
 
-特点：
-- 动态密钥生成
-- 自动密钥轮换
-- 审计日志
-- 多种认证方式 (K8s SA, AppRole, LDAP)
+---
+
+## 行业推荐算法
+
+### 对称加密: AES-256-GCM
+
+| 项目 | 值 |
+|------|-----|
+| 算法 | AES |
+| 密钥长度 | 256 位 |
+| 模式 | GCM (Galois/Counter Mode) |
+| IV 长度 | 12 字节 |
+| Tag 长度 | 128 位 |
+
+```java
+// 加密
+String ciphertext = cryptoUtil.encrypt("敏感数据", encryptionKey);
+// 解密
+String plaintext = cryptoUtil.decrypt(ciphertext, encryptionKey);
+```
+
+### 密码哈希: bcrypt
+
+| 项目 | 值 |
+|------|-----|
+| 算法 | bcrypt |
+| 强度 | 12 (2^12 迭代) |
+| Salt | 自动生成 |
+
+```java
+// 哈希密码
+String hashed = cryptoUtil.hashPassword("userPassword");
+// 验证密码
+boolean match = cryptoUtil.verifyPassword("userPassword", hashed);
+```
+
+### 密钥派生: PBKDF2
+
+| 项目 | 值 |
+|------|-----|
+| 算法 | PBKDF2WithHmacSHA256 |
+| 迭代次数 | 100,000 |
+| 密钥长度 | 256 位 |
+
+```java
+// 派生密钥
+String salt = cryptoUtil.generateSalt();
+String derivedKey = cryptoUtil.deriveKey(password, salt);
 ```
 
 ---
 
 ## 推荐方案：配置中心加密 + Vault
 
-### 架构图
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                        开发/测试环境                          │
-├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐   │
-│  │   IDE/本地   │    │  配置中心   │    │   Vault     │   │
-│  │ (config)    │    │ (加密存储)  │    │  (开发环境)  │   │
-│  └─────────────┘    └─────────────┘    └─────────────┘   │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                        生产环境                              │
-├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐   │
-│  │  K8s/Docker │    │  配置中心   │    │   生产Vault │   │
-│  │  (Secrets) │    │ (加密存储)  │    │   (HSM)     │   │
-│  └─────────────┘    └─────────────┘    └─────────────┘   │
-└─────────────────────────────────────────────────────────────┘
-```
-
 ### 配置示例
-
-#### 1. 配置加密工具类
-
-```java
-// 加密配置值
-public class ConfigEncryptor {
-    
-    private static final String ALGORITHM = "AES/GCM/NoPadding";
-    
-    public static String encrypt(String plainText, String masterKey) {
-        // 生成随机 IV
-        byte[] iv = new byte[12];
-        new SecureRandom().nextBytes(iv);
-        
-        // 使用 master-key 派生出数据加密密钥
-        SecretKey key = deriveKey(masterKey, "config-encryption");
-        
-        // AES-GCM 加密
-        Cipher cipher = Cipher.getInstance(ALGORITHM);
-        cipher.init(Cipher.ENCRYPT_MODE, key, new GCMParameterSpec(128, iv));
-        byte[] encrypted = cipher.doFinal(plainText.getBytes());
-        
-        // 返回格式: {cipher}[Base64(iv + encrypted)]
-        return "{cipher}" + Base64.getEncoder().encodeToString(iv) + ":" 
-            + Base64.getEncoder().encodeToString(encrypted);
-    }
-    
-    private static SecretKey deriveKey(String masterKey, String purpose) {
-        // 使用 HKDF 派生密钥
-        // ...
-    }
-}
-```
-
-#### 2. 配置中心配置
 
 ```yaml
 # config-server/application.yml
 spring:
-  application:
-    name: config-server
-  
   cloud:
     config:
       server:
         encrypt:
-          key: ${CONFIG_MASTER_KEY}  # 启动时注入
-  
-  security:
-    user:
-      password: ${CONFIG_SERVER_PASSWORD}
+          key: ${CONFIG_MASTER_KEY}
 ```
 
-#### 3. 微服务配置
-
 ```yaml
-# bootstrap.yml
-spring:
-  cloud:
-    config:
-      uri: http://config-service:8888
-      username: ${CONFIG_CLIENT_USERNAME}
-      password: ${CONFIG_CLIENT_PASSWORD}  # 从 Vault 获取
-      
-# application.yml (在配置中心)
+# 客户端配置
 spring:
   datasource:
     password: {cipher}AQBf8mK3...  # 加密存储
@@ -223,12 +158,26 @@ spring:
 
 ---
 
+## 禁止使用的算法
+
+| 算法 | 原因 |
+|------|------|
+| MD5 | 可碰撞，不安全 |
+| SHA-1 | 可碰撞，不安全 |
+| DES | 密钥太短，易破解 |
+| 3DES | 效率低，安全性不足 |
+| RC4 | 已废弃 |
+| ECB 模式 | 无随机化，泄露模式 |
+
+---
+
 ## 实施步骤
 
 ### 1. 立即可做
 - [x] 删除 Git 中的敏感配置
 - [x] 使用 .gitignore 排除敏感文件
-- [x] 启用配置加密存储
+- [x] 启用配置加密存储 (AES-256-GCM)
+- [x] 使用 bcrypt 进行密码哈希
 
 ### 2. 短期目标
 - [ ] 部署 Vault (开发/测试环境)
@@ -246,45 +195,11 @@ spring:
 
 ```bash
 # 检查敏感信息泄露
-grep -r "password\s*=" --include="*.yml" --include="*.properties" .
-grep -r "secret\s*=" --include="*.yml" --include="*.properties" .
-grep -r "key\s*=" --include="*.yml" --include="*.properties" .
+grep -r "password\s*=" --include="*.yml" .
+grep -r "secret\s*=" --include="*.yml" .
 
-# 检查环境变量
-env | grep -i "password\|secret\|key\|token"
-
-# 检查 Docker 环境变量
-docker inspect <container> | grep -i "Env"
-```
-
----
-
-## 相关配置
-
-### .gitignore 敏感文件
-
-```
-# 敏感配置
-config-local.yml
-application-local.yml
-*.local.*
-
-# 密钥文件
-*.key
-*.pem
-secrets/
-credentials/
-```
-
-### CI/CD 安全
-
-```yaml
-# .gitlab-ci.yml 示例
-variables:
-  DB_PASSWORD: $CI_REGISTRY_PASSWORD  # 从 GitLab CI 变量获取
-  
-script:
-  - docker build --build-arg DB_PASSWORD=$DB_PASSWORD .
+# 检查禁止算法
+grep -r "MD5\|SHA-1\|DES\|RC4" --include="*.java" .
 ```
 
 ---
