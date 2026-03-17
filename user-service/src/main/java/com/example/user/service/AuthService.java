@@ -19,10 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
-import java.util.regex.Pattern;
+import java.util.*;
 
 /**
  * 认证服务
@@ -48,24 +45,58 @@ public class AuthService {
     @Autowired
     private JwtUtil jwtUtil;
 
-    // Access Token 过期时间（毫秒），默认 30 分钟
     @Value("${jwt.expiration:1800000}")
     private Long accessTokenExpiration;
 
-    // Refresh Token 过期时间（毫秒），默认 7 天
     @Value("${jwt.refresh-expiration:604800000}")
     private Long refreshTokenExpiration;
 
-    // 是否启用注册邀请码验证
     @Value("${auth.register.invite-code-required:false}")
     private boolean inviteCodeRequired;
 
-    // 预设的邀请码
     @Value("${auth.register.invite-codes:}")
     private String inviteCodes;
 
-    // 密码强度正则
-    private static final Pattern PASSWORD_PATTERN = Pattern.compile("^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d@$!%*#?&]{8,}$");
+    // 弱密码字典
+    private static final Set<String> WEAK_PASSWORDS = new HashSet<>(Arrays.asList(
+            // 常见弱密码
+            "123456", "password", "12345678", "qwerty", "123456789",
+            "12345", "1234", "111111", "1234567", "dragon",
+            "123123", "baseball", "abc123", "football", "monkey",
+            "letmein", "shadow", "master", "666666", "qwertyuiop",
+            "123321", "mustang", "1234567890", "michael", "654321",
+            "superman", "1qaz2wsx", "7777777", "121212", "000000",
+            "qazwsx", "123qwe", "killer", "trustno1", "jordan",
+            "jennifer", "zxcvbnm", "asdfgh", "hunter", "buster",
+            "soccer", "harley", "batman", "andrew", "tigger",
+            "sunshine", "iloveyou", "2000", "charlie", "robert",
+            "thomas", "hockey", "ranger", "daniel", "starwars",
+            "klaster", "112233", "george", "computer", "michael",
+            "john", "essex", "michelle", "ginger", "maggie",
+            "159753", "aaaaaa", "christin", "Kimberly",
+            "schumacher", "taylor", "matrix",
+            // 常见模式
+            "password1", "password123", "admin123", "welcome123",
+            "changeme", "default", "root", "toor", "passw0rd",
+            "p@ssword", "p@ssw0rd", "passw0rd!",
+            "Admin@123", "Admin123", "admin@123", "Root@123", "Test@123",
+            // 键盘模式
+            "1q2w3e4r", "1qaz2wsx", "qweasdzxc", "asdfghjkl",
+            "zxcvbnm", "1qaz@WSX", "qwe@123", "asd@123",
+            // 纯数字变体
+            "000000", "111111", "222222", "333333", "444444",
+            "555555", "666666", "777777", "888888", "999999",
+            "0123456789", "9876543210",
+            // 公司常见
+            "company123", "password1!", "P@ssword1!", "Welcome1!",
+            // 季节日期
+            "Summer2024", "Spring2024", "Winter2024", "Autumn2024",
+            "2024Pass", "2024Password", "Pass2024"
+    ));
+
+    // 密码强度正则：至少8位，包含数字和字母
+    private static final Pattern PASSWORD_PATTERN = 
+            Pattern.compile("^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d@$!%*#?&]{8,}$");
 
     /**
      * 用户注册
@@ -90,9 +121,8 @@ public class AuthService {
             }
         }
 
-        if (!isPasswordStrong(request.getPassword())) {
-            throw new RuntimeException("密码强度不足，需至少8位，包含数字和字母");
-        }
+        // 验证密码强度
+        validatePasswordStrength(request.getPassword());
 
         if (!isValidUsername(request.getUsername())) {
             throw new RuntimeException("用户名格式不正确，只允许字母、数字、下划线");
@@ -126,8 +156,74 @@ public class AuthService {
         return false;
     }
 
-    private boolean isPasswordStrong(String password) {
-        return PASSWORD_PATTERN.matcher(password).matches();
+    /**
+     * 验证密码强度
+     */
+    private void validatePasswordStrength(String password) {
+        if (password == null || password.length() < 8) {
+            throw new RuntimeException("密码长度至少8位");
+        }
+
+        // 检查是否包含数字
+        if (!password.matches(".*\\d.*")) {
+            throw new RuntimeException("密码必须包含数字");
+        }
+
+        // 检查是否包含字母
+        if (!password.matches(".*[a-zA-Z].*")) {
+            throw new RuntimeException("密码必须包含字母");
+        }
+
+        // 检查弱密码
+        String lowerPassword = password.toLowerCase();
+        if (WEAK_PASSWORDS.contains(lowerPassword)) {
+            throw new RuntimeException("密码太简单，请使用更复杂的密码");
+        }
+
+        // 检查键盘连续字符
+        if (hasSequentialChars(password)) {
+            throw new RuntimeException("密码不能包含连续字符");
+        }
+
+        // 检查重复字符
+        if (hasRepeatedChars(password)) {
+            throw new RuntimeException("密码不能包含过多重复字符");
+        }
+    }
+
+    /**
+     * 检查键盘连续字符
+     */
+    private boolean hasSequentialChars(String password) {
+        String lower = password.toLowerCase();
+        String[] sequences = {
+                "1234567890", "qwertyuiop", "asdfghjkl", "zxcvbnm",
+                "abcdefghijklmnopqrstuvwxyz", "0123456789",
+                "qazwsxedc", "plmoknijb", "ujmki"
+        };
+
+        for (String seq : sequences) {
+            for (int i = 0; i < seq.length() - 2; i++) {
+                String sub = seq.substring(i, i + 3);
+                if (lower.contains(sub)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 检查重复字符
+     */
+    private boolean hasRepeatedChars(String password) {
+        for (int i = 0; i < password.length() - 2; i++) {
+            if (password.charAt(i) == password.charAt(i + 1) &&
+                    password.charAt(i) == password.charAt(i + 2)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean isValidUsername(String username) {
@@ -135,7 +231,7 @@ public class AuthService {
     }
 
     /**
-     * 用户登录 - 生成 Access Token 和 Refresh Token
+     * 用户登录
      */
     public LoginResponse login(LoginRequest request) {
         User user = userRepository.findByUsername(request.getUsername())
@@ -149,7 +245,6 @@ public class AuthService {
             throw new RuntimeException("账号已被禁用");
         }
 
-        // 生成 Access Token
         Set<String> roles = new HashSet<>();
         for (Role role : user.getRoles()) {
             roles.add(role.getName());
@@ -161,7 +256,6 @@ public class AuthService {
             user.getPermissions()
         );
 
-        // 生成 Refresh Token
         String refreshTokenValue = UUID.randomUUID().toString().replace("-", "");
         RefreshToken refreshToken = new RefreshToken(refreshTokenValue, user, 
             LocalDateTime.now().plusNanos(refreshTokenExpiration * 1_000_000));
@@ -173,7 +267,7 @@ public class AuthService {
             user.getUsername(),
             user.getEmail(),
             user.getId(),
-            accessTokenExpiration / 1000,  // 转换为秒
+            accessTokenExpiration / 1000,
             refreshTokenExpiration / 1000
         );
     }
@@ -194,11 +288,9 @@ public class AuthService {
             throw new RuntimeException("账号已被禁用");
         }
 
-        // 撤销旧的 Refresh Token
         refreshToken.setRevoked(true);
         refreshTokenRepository.save(refreshToken);
 
-        // 生成新的 Access Token
         Set<String> roles = new HashSet<>();
         for (Role role : user.getRoles()) {
             roles.add(role.getName());
@@ -210,7 +302,6 @@ public class AuthService {
             user.getPermissions()
         );
 
-        // 生成新的 Refresh Token
         String newRefreshTokenValue = UUID.randomUUID().toString().replace("-", "");
         RefreshToken newRefreshToken = new RefreshToken(newRefreshTokenValue, user,
             LocalDateTime.now().plusNanos(refreshTokenExpiration * 1_000_000));
@@ -227,9 +318,6 @@ public class AuthService {
         );
     }
 
-    /**
-     * 撤销 Refresh Token
-     */
     @Transactional
     public void revokeToken(String refreshTokenValue) {
         refreshTokenRepository.findByToken(refreshTokenValue).ifPresent(token -> {
@@ -238,17 +326,11 @@ public class AuthService {
         });
     }
 
-    /**
-     * 撤销用户所有 Refresh Token（退出登录）
-     */
     @Transactional
     public void revokeAllUserTokens(Long userId) {
         refreshTokenRepository.revokeAllByUserId(userId);
     }
 
-    /**
-     * 清理过期 Token
-     */
     @Transactional
     public void cleanupExpiredTokens() {
         refreshTokenRepository.deleteExpiredOrRevoked(LocalDateTime.now());
