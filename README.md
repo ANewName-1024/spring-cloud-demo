@@ -97,7 +97,7 @@ java -jar api-gateway/target/api-gateway-1.0.0.jar
 ## Git 信息
 
 ```
-仓库地址: https://github.com/https://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hub.com/ANewName-1024/spring-cloud-demo.git
+仓库地址: https://github.com/ANewName-1024/spring-cloud-demo.git
 最后更新: 2026-03-17 08:55:49
 ```
 
