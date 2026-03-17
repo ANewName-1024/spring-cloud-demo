@@ -58,6 +58,56 @@ public class AuthController {
     }
 
     /**
+     * 刷新 Access Token
+     */
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refreshToken(@RequestBody Map<String, String> request) {
+        try {
+            String refreshToken = request.get("refreshToken");
+            if (refreshToken == null || refreshToken.isEmpty()) {
+                return ResponseEntity.badRequest().body(new MessageResponse("refreshToken 不能为空"));
+            }
+            LoginResponse response = authService.refreshToken(refreshToken);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
+        }
+    }
+
+    /**
+     * 撤销 Refresh Token
+     */
+    @PostMapping("/revoke")
+    public ResponseEntity<?> revokeToken(@RequestBody Map<String, String> request) {
+        try {
+            String refreshToken = request.get("refreshToken");
+            if (refreshToken == null || refreshToken.isEmpty()) {
+                return ResponseEntity.badRequest().body(new MessageResponse("refreshToken 不能为空"));
+            }
+            authService.revokeToken(refreshToken);
+            return ResponseEntity.ok(new MessageResponse("Token 已撤销"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
+        }
+    }
+
+    /**
+     * 退出登录（撤销所有 Token）
+     */
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(Authentication authentication) {
+        try {
+            if (authentication != null && authentication.getPrincipal() instanceof User) {
+                User user = (User) authentication.getPrincipal();
+                authService.revokeAllUserTokens(user.getId());
+            }
+            return ResponseEntity.ok(new MessageResponse("已退出登录"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
+        }
+    }
+
+    /**
      * 获取当前用户信息
      */
     @GetMapping("/me")
