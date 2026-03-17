@@ -1,5 +1,6 @@
 package com.example.user.entity;
 
+import com.example.common.listener.EntityEncryptListener;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -9,6 +10,7 @@ import java.time.LocalDateTime;
  */
 @Entity
 @Table(name = "oidc_clients")
+@EntityListeners(EntityEncryptListener.class)
 public class OidcClient {
 
     @Id

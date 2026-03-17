@@ -59,6 +59,13 @@
             <version>0.12.3</version>
             <scope>runtime</scope>
         </dependency>
+        
+        <!-- Common 模块 -->
+        <dependency>
+            <groupId>com.example</groupId>
+            <artifactId>common</artifactId>
+            <version>1.0.0</version>
+        </dependency>
     </dependencies>
 
     <build>

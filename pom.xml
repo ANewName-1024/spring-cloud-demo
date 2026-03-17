@@ -13,6 +13,7 @@
     <description>Spring Cloud Demo Project</description>
 
     <modules>
+        <module>common</module>
         <module>eureka-server</module>
         <module>gateway</module>
         <module>user-service</module>
