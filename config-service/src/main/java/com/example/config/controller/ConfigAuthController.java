@@ -99,4 +99,51 @@ public class ConfigAuthController {
             return ResponseEntity.ok(Map.of("valid", false, "error", e.getMessage()));
         }
     }
+
+    /**
+     * 修改密码
+     */
+    @PostMapping("/password/change")
+    public ResponseEntity<?> changePassword(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestBody Map<String, String> request) {
+        try {
+            String token = authHeader.substring(7);
+            String username = authService.getUsernameFromToken(token);
+            String oldPassword = request.get("oldPassword");
+            String newPassword = request.get("newPassword");
+            
+            if (oldPassword == null || newPassword == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "参数不完整"));
+            }
+            
+            authService.changePassword(username, oldPassword, newPassword);
+            
+            return ResponseEntity.ok(Map.of("message", "密码修改成功"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * 重置密码（管理员）
+     */
+    @PostMapping("/password/reset")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> request) {
+        try {
+            String username = request.get("username");
+            String newPassword = request.get("newPassword");
+            
+            if (username == null || newPassword == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "参数不完整"));
+            }
+            
+            authService.resetPassword(username, newPassword);
+            
+            return ResponseEntity.ok(Map.of("message", "密码重置成功"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
 }
