@@ -1,148 +1,205 @@
 # Spring Cloud Demo
 
-基于 Spring Cloud 的微服务 Demo 项目，包含用户认证、权限管理等核心功能。
+基于 Spring Cloud 的微服务 Demo 项目，包含用户认证、权限管理、运维监控等核心功能。
 
-## 项目文档
+## 项目概览
 
-| 文档 | 说明 |
-|------|------|
-| [DESIGN.md](./DESIGN.md) | 系统设计文档 |
-| [DEPLOY.md](./DEPLOY.md) | 部署说明 |
-| [API.md](./API.md) | API 接口文档 |
-| [AGENT.md](./AGENT.md) | 智能体使用指南 |
-
-## 技术栈
-
-| 组件 | 技术 |
-|------|------|
-| 框架 | Spring Boot 3.2.0 |
-| 网关 | Spring Cloud Gateway 4.1.0 |
-| 注册中心 | Spring Cloud Eureka |
-| 配置中心 | Spring Cloud Config |
-| 安全 | Spring Security + JWT/OIDC |
-| 数据库 | PostgreSQL |
-| 国密算法 | BouncyCastle (SM2/SM3/SM4) |
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        用户请求                                 │
+└────────────────────────────┬────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    Gateway (8080)                                │
+│  - JWT/OIDC 认证                                                │
+│  - 请求路由                                                      │
+│  - 限流                                                          │
+│  - 日志追踪                                                      │
+└────────────────────────────┬────────────────────────────────┘
+                             │
+           ┌─────────────────┼─────────────────┐
+           ▼                 ▼                 ▼
+┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐
+│ user-service   │ │ config-service  │ │  ops-service    │
+│    (8081)     │ │    (8082)      │ │    (8090)       │
+│               │ │                │ │                 │
+│ OIDC 授权     │ │ Spring Cloud   │ │  运维监控        │
+│ 用户管理      │ │ Config         │ │  告警管理        │
+│ RBAC 权限     │ │ XXL-JOB 调度   │ │  日志聚合        │
+└─────────────────┘ └─────────────────┘ └─────────────────┘
+           │                 │                 │
+           └─────────────────┼─────────────────┘
+                             ▼
+                  ┌─────────────────┐
+                  │  Eureka (8761)  │
+                  │  服务注册发现    │
+                  └─────────────────┘
+```
 
 ## 模块划分
 
-### 1. user-service (8081) - 用户服务 / 认证中心
+| 模块 | 端口 | 职责 |
+|------|------|------|
+| eureka-server | 8761 | 服务注册与发现 |
+| gateway | 8080 | API 网关、认证鉴权 |
+| user-service | 8081 | 用户服务、OIDC 授权 |
+| config-service | 8082 | 配置中心、XXL-JOB 调度 |
+| ops-service | 8090 | 运维监控、告警管理 |
+| common | - | 公共模块 |
 
-**职责：**
-- 用户管理（CRUD）
-- 用户认证（登录/注册）
-- OIDC/OAuth 2.0 授权服务器
-- RBAC 权限管理
-- 机机账户（AKSK）管理
+## 技术栈
 
-**核心功能：**
-- JWT Token 签发
-- Access Token / Refresh Token
-- OIDC 发现文档
-- JWKS 公钥服务
-- 客户端注册
+| 组件 | 技术 | 版本 |
+|------|------|------|
+| 运行时 | Java | 21 |
+| 框架 | Spring Boot | 3.2.0 |
+| 微服务 | Spring Cloud | 2023.0.0 |
+| 网关 | Spring Cloud Gateway | 4.1.0 |
+| 注册中心 | Netflix Eureka | - |
+| 配置中心 | Spring Cloud Config | - |
+| 任务调度 | XXL-JOB | 2.3.1 |
+| 安全 | Spring Security + JWT/OIDC | 6.2.0 |
+| 数据库 | PostgreSQL | - |
+| 国密 | BouncyCastle | 1.70 |
 
-### 2. gateway (8080) - API 网关
+## 核心功能
 
-**职责：**
-- 统一请求入口
-- OIDC Token 验证
-- 路由转发
-- 请求鉴权
+### 用户认证与权限
+- ✅ 用户名密码登录/注册
+- ✅ JWT Token 签发与验证
+- ✅ OIDC/OAuth 2.0 授权服务器
+- ✅ RBAC 权限模型
+- ✅ 机机账户 (AKSK) 认证
+- ✅ Refresh Token 刷新
+- ✅ 密码强度验证 + 弱密码检测
+- ✅ 敏感字段国密加密存储
 
-**核心功能：**
-- JWT 验证过滤器
-- OIDC JWKS 集成
-- 用户信息传递
-- 统一鉴权入口
+### API 网关
+- ✅ JWT/OIDC Token 验证
+- ✅ 请求路由转发 (LoadBalancer)
+- ✅ 限流 (100 req/min)
+- ✅ 请求日志 + Trace ID 追踪
+- ✅ 动态服务发现
+- ✅ CORS 配置
 
-### 3. config-service (8082) - 配置服务
+### 配置中心
+- ✅ Spring Cloud Config Server
+- ✅ 配置加密存储 (AES)
+- ✅ 国密算法支持 (SM2/SM3/SM4)
+- ✅ XXL-JOB 分布式任务调度
 
-**职责：**
-- Spring Cloud Config Server
-- OpenClaw 配置管理
-- 密钥管理
-- 国密算法支持
-
-**核心功能：**
-- 分布式配置中心
-- 配置加密存储
-- 软件根密钥/硬件根密钥
-- SM2/SM3/SM4 国密算法
+### 运维监控
+- ✅ 统一异常处理
+- ✅ 日志规范设计 (ELK)
+- ✅ 告警管理 (Ops Service)
+- ✅ 敏感信息保护方案
 
 ## 快速开始
 
-### 本地开发
+### 环境要求
+
+- JDK 21+
+- Maven 3.9+
+- PostgreSQL
+
+### 启动服务
 
 ```bash
 # 1. 克隆项目
 git clone https://github.com/ANewName-1024/spring-cloud-demo.git
 cd spring-cloud-demo
 
-# 2. 配置环境变量
-# 参考 .env.example
+# 2. 编译项目
+mvn clean package -DskipTests
 
-# 3. 启动服务
-# 顺序: user-service → gateway → config-service
+# 3. 启动服务 (按顺序)
+java -jar eureka-server/target/eureka-server-1.0.0.jar
+java -jar user-service/target/user-service-1.0.0.jar
+java -jar config-service/target/config-service-1.0.0.jar
+java -jar gateway/target/gateway-1.0.0.jar
+java -jar ops-service/target/ops-service-1.0.0.jar
+
+# 或使用 Docker Compose
+docker-compose up -d
 ```
 
 ### 服务端口
 
-| 服务 | 端口 |
-|------|------|
-| Gateway | 8080 |
-| User Service | 8081 |
-| Config Service | 8082 |
-
-## 核心功能
-
-### 用户认证
-- ✅ 用户名密码登录
-- ✅ JWT Token 认证
-- ✅ OIDC/OAuth 2.0
-- ✅ 机机账户 AKSK 认证
-- ✅ AKSK 轮转
-- ✅ Refresh Token
-
-### 权限管理
-- ✅ RBAC 权限模型
-- ✅ 角色管理
-- ✅ 权限管理
-- ✅ 方法级权限控制
-
-### 安全特性
-- ✅ 密码加密存储
-- ✅ 密码强度验证
-- ✅ 敏感信息环境变量配置
-- ✅ 国密算法支持
+| 服务 | 端口 | 访问地址 |
+|------|------|----------|
+| Gateway | 8080 | http://localhost:8080 |
+| User Service | 8081 | http://localhost:8081 |
+| Config Service | 8082 | http://localhost:8082 |
+| Ops Service | 8090 | http://localhost:8090 |
+| Eureka | 8761 | http://localhost:8761 |
 
 ## 项目结构
 
 ```
 springcloud-demo/
-├── user-service/           # 用户服务 + OIDC 授权服务器
-├── gateway/               # API 网关
-├── config-service/        # 配置服务 + Spring Cloud Config
-├── config-repo/           # 配置文件仓库
-├── DESIGN.md             # 设计文档
-├── DEPLOY.md             # 部署说明
-├── API.md                # 接口文档
-└── AGENT.md             # 智能体使用指南
+├── eureka-server/          # 服务注册中心 (8761)
+├── gateway/               # API 网关 (8080)
+├── user-service/          # 用户服务 + OIDC (8081)
+├── config-service/        # 配置中心 + XXL-JOB (8082)
+├── ops-service/          # 运维服务 (8090)
+├── common/               # 公共模块
+├── elk/                  # ELK 配置
+├── scripts/              # 部署脚本
+├── docs/                 # 详细文档
+│   ├── DESIGN.md         # 系统设计
+│   ├── API.md           # 接口文档
+│   ├── DEPLOY.md        # 部署指南
+│   ├── OPS.md           # 运维设计
+│   ├── LOGGING.md       # 日志规范
+│   ├── EXCEPTION.md     # 异常处理
+│   ├── ENCRYPTION.md    # 加密方案
+│   ├── SECURITY.md      # 安全方案
+│   ├── TESTING.md       # 测试规范
+│   ├── AUTO_DEPLOY.md   # 自动化部署
+│   └── PERMISSION.md    # 权限管理
+└── README.md
 ```
 
-## 环境要求
+## 文档索引
 
-- JDK 21+
-- Maven 3.9+
-- PostgreSQL
+| 文档 | 说明 |
+|------|------|
+| [README.md](./README.md) | 项目概览 |
+| [DESIGN.md](./DESIGN.md) | 系统架构设计 |
+| [API.md](./API.md) | API 接口文档 |
+| [DEPLOY.md](./DEPLOY.md) | 部署指南 |
+| [OPS.md](./OPS.md) | 运维服务设计 |
+| [LOGGING.md](./docs/LOGGING.md) | 日志设计规范 |
+| [EXCEPTION.md](./docs/EXCEPTION.md) | 异常处理设计 |
+| [ENCRYPTION.md](./docs/ENCRYPTION.md) | 敏感字段加密方案 |
+| [SECURITY.md](./docs/SECURITY.md) | 敏感信息保护方案 |
+| [TESTING.md](./docs/TESTING.md) | 测试规范 |
+| [AUTO_DEPLOY.md](./docs/AUTO_DEPLOY.md) | 自动化部署 |
+| [PERMISSION.md](./docs/PERMISSION.md) | 权限管理 |
+| [AGENT.md](./AGENT.md) | 智能体使用指南 |
+| [DEVELOPMENT.md](./DEVELOPMENT.md) | 开发规范 |
+| [BRANCH_STRATEGY.md](./BRANCH_STRATEGY.md) | 分支策略 |
 
-## 相关文档
+## 环境变量
 
-详细文档请查看：
-- [系统设计](./DESIGN.md)
-- [部署说明](./DEPLOY.md)
-- [接口文档](./API.md)
-- [智能体指南](./AGENT.md)
+| 变量 | 说明 | 示例 |
+|------|------|------|
+| DB_HOST | 数据库地址 | 8.137.116.121 |
+| DB_PORT | 数据库端口 | 5432 |
+| DB_NAME | 数据库名称 | business_db |
+| DB_USERNAME | 数据库用户名 | business |
+| DB_PASSWORD | 数据库密码 | - |
+| EUREKA_HOST | Eureka 地址 | 8.137.116.121 |
+| EUREKA_PORT | Eureka 端口 | 8761 |
+| JWT_SECRET | JWT 密钥 | - |
+| OIDC_ISSUER | OIDC 签发者 | http://localhost:8081 |
+| ENCRYPTION_KEY | 加密密钥 | - |
 
 ## License
 
 MIT
+
+---
+
+最后更新: 2026-03-17
