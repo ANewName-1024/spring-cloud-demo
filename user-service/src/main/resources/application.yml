@@ -20,6 +20,17 @@ spring:
 eureka:
   client:
     service-url:
-      defaultZone: http://admin:Eureka@2024!Secure@8.137.116.121:9000/eureka/
+      defaultZone: http://admin:Eureka%402024%21Secure@8.137.116.121:9000/eureka/
   instance:
     prefer-ip-address: true
+    instance-id: ${spring.application.name}:${server.port}
+
+jwt:
+  secret: mySecretKeyForJWTTokenGenerationMustBeLongEnough12345
+  expiration: 86400000
+
+# 注册配置
+auth:
+  register:
+    invite-code-required: false
+    invite-codes: "invite2024,admin123"
