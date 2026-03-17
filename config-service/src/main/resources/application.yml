@@ -39,3 +39,9 @@ eureka:
 openclaw:
   config:
     default-type: PARAMETER
+
+# JWT 配置
+config:
+  jwt:
+    secret: ${CONFIG_JWT_SECRET:ConfigServiceJWTSecretKey2024ChangeInProduction}
+    expiration: ${CONFIG_JWT_EXPIRATION:86400000}
