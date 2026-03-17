@@ -1,5 +1,6 @@
 package com.example.user.entity;
 
+import com.example.common.listener.EntityEncryptListener;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -8,6 +9,7 @@ import java.time.LocalDateTime;
  */
 @Entity
 @Table(name = "service_accounts")
+@EntityListeners(EntityEncryptListener.class)
 public class ServiceAccount {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

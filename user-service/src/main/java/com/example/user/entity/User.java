@@ -1,5 +1,6 @@
 package com.example.user.entity;
 
+import com.example.common.listener.EntityEncryptListener;
 import jakarta.persistence.*;
 import java.util.HashSet;
 import java.util.Set;
@@ -9,6 +10,7 @@ import java.util.Set;
  */
 @Entity
 @Table(name = "users")
+@EntityListeners(EntityEncryptListener.class)
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- 引入公共日志配置 -->
+    <include resource="common-logback.xml"/>
+    
+    <!-- 应用名称 -->
+    <property name="APP_NAME" value="config-service"/>
+    
+    <!-- Config Service 特定配置 -->
+    <!--
+    日志记录要点：
+    1. 配置获取日志
+    2. 配置变更日志
+    3. 加密/解密日志
+    4. Git 操作日志
+    -->
+    
+    <!-- 配置日志 -->
+    <logger name="org.springframework.cloud.config.server" level="INFO"/>
+    <logger name="com.example.config" level="INFO"/>
+    
+    <!-- 加密日志 -->
+    <logger name="com.example.config.security" level="DEBUG"/>
+    
+    <!-- 引入默认配置 -->
+    <include resource="common-logback.xml"/>
+</configuration>
