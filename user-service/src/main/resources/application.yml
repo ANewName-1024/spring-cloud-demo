@@ -1,45 +1,39 @@
-server:
-  port: 8081
-
 spring:
   application:
     name: user-service
+  config:
+    import: optional:file:./config
+  
   datasource:
-    url: jdbc:postgresql://8.137.116.121:8432/business_db
-    username: business
-    password: NewPass2024
+    url: jdbc:postgresql://${DB_HOST:8.137.116.121}:${DB_PORT:8432}/${DB_NAME:business_db}
+    username: ${DB_USERNAME:business}
+    password: ${DB_PASSWORD:NewPass2024}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
-      minimum-idle: 5
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+      minimum-idle: 2
+
+server:
+  port: ${SERVER_PORT:8081}
+
+jwt:
+  secret: ${JWT_SECRET:UserServiceJWTSecretKey2024ChangeInProduction}
+  expiration: 1800000
+  refresh-expiration: 604800000
 
 eureka:
   client:
     service-url:
-      defaultZone: http://admin:EurekaNew2024@localhost:9000/eureka/
+      defaultZone: http://${EUREKA_USER:admin}:${EUREKA_PASSWORD:EurekaNew2024}@${EUREKA_HOST:8.137.116.121}:${EUREKA_PORT:9000}/eureka/
+    register-with-eureka: true
+    fetch-registry: true
   instance:
     prefer-ip-address: true
     instance-id: ${spring.application.name}:${server.port}
 
-jwt:
-  secret: mySecretKeyForJWTTokenGenerationMustBeLongEnough12345
-  expiration: 1800000
-  refresh-expiration: 604800000
+spring.cloud.config.enabled: false
+spring.cloud.config.import-check.enabled: false
 
-oidc:
-  issuer: http://localhost:8081
-  access-token-expiration: 1800000
-  id-token-expiration: 3600000
-  authorization-code-expiration: 600000
-
-auth:
-  register:
-    invite-code-required: false
-    invite-codes: ""
+logging:
+  level:
+    com.example.user: DEBUG
