@@ -1,26 +1,40 @@
 spring:
   application:
     name: gateway
-  config:
-    import: optional:file:./config
-  cache:
-    type: caffeine
-    caffeine:
-      spec: maximumSize=1000,expireAfterWrite=300s
-
   cloud:
+    nacos:
+      server-addr: ${NACOS_HOST:localhost}:${NACOS_PORT:8848}
+      username: ${NACOS_USERNAME:nacos}
+      password: ${NACOS_PASSWORD:nacos}
+      discovery:
+        namespace: public
+        enabled: true
+        register-enabled: true
+      config:
+        namespace: public
+        enabled: true
+        file-extension: yml
+        refresh-enabled: true
+        shared-configs:
+          - data-id: shared-config.yml
+            group: SHARED_GROUP
+            refresh: true
     gateway:
       server:
         webflux:
           routes:
             - id: user-service
-              uri: http://localhost:8081
+              uri: lb://user-service
               predicates:
                 - Path=/user/**
             - id: config-service
-              uri: http://localhost:8082
+              uri: lb://config-service
               predicates:
                 - Path=/config/**
+          discovery:
+            locator:
+              enabled: true
+              lower-case-service-id: true
           globalcors:
             cors-configurations:
               '[/**]':
@@ -39,18 +53,7 @@ jwt:
   secret: ${JWT_SECRET:GatewayJWTSecretKey2024ChangeInProduction}
   expiration: 1800000
 
-eureka:
-  client:
-    service-url:
-      defaultZone: http://${EUREKA_USER:admin}:${EUREKA_PASSWORD:EurekaNew2024}@${EUREKA_HOST:8.137.116.121}:${EUREKA_PORT:9000}/eureka/
-    register-with-eureka: true
-    fetch-registry: true
-  instance:
-    prefer-ip-address: true
-
-spring.cloud.config.enabled: false
-spring.cloud.config.import-check.enabled: false
-
 logging:
   level:
     org.springframework.cloud.gateway: DEBUG
+    com.alibaba.cloud.nacos: DEBUG

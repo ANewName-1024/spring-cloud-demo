@@ -17,10 +17,10 @@
     <description>API Gateway</description>
 
     <dependencies>
-        <!-- Spring Cloud Config Client -->
+        <!-- Nacos Discovery -->
         <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-config</artifactId>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
         </dependency>
         
         <!-- Spring Cloud Gateway (WebFlux) -->
@@ -34,10 +34,7 @@
             <groupId>com.github.ben-manes.caffeine</groupId>
             <artifactId>caffeine</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
-        </dependency>
+        
         <!-- JWT -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>

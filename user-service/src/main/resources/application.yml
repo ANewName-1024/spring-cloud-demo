@@ -1,8 +1,24 @@
 spring:
   application:
     name: user-service
-  config:
-    import: optional:file:./config
+  cloud:
+    nacos:
+      server-addr: ${NACOS_HOST:localhost}:${NACOS_PORT:8848}
+      username: ${NACOS_USERNAME:nacos}
+      password: ${NACOS_PASSWORD:nacos}
+      discovery:
+        namespace: public
+        enabled: true
+        register-enabled: true
+      config:
+        namespace: public
+        enabled: true
+        file-extension: yml
+        refresh-enabled: true
+        shared-configs:
+          - data-id: shared-config.yml
+            group: SHARED_GROUP
+            refresh: true
   
   datasource:
     url: jdbc:postgresql://${DB_HOST:8.137.116.121}:${DB_PORT:8432}/${DB_NAME:business_db}
@@ -21,19 +37,7 @@ jwt:
   expiration: 1800000
   refresh-expiration: 604800000
 
-eureka:
-  client:
-    service-url:
-      defaultZone: http://${EUREKA_USER:admin}:${EUREKA_PASSWORD:EurekaNew2024}@${EUREKA_HOST:8.137.116.121}:${EUREKA_PORT:9000}/eureka/
-    register-with-eureka: true
-    fetch-registry: true
-  instance:
-    prefer-ip-address: true
-    instance-id: ${spring.application.name}:${server.port}
-
-spring.cloud.config.enabled: false
-spring.cloud.config.import-check.enabled: false
-
 logging:
   level:
     com.example.user: DEBUG
+    com.alibaba.cloud.nacos: DEBUG

@@ -1,11 +1,16 @@
-server:
-  port: ${SERVER_PORT:8082}
-
 spring:
   application:
     name: config-service
+  cloud:
+    nacos:
+      server-addr: ${NACOS_HOST:localhost}:${NACOS_PORT:8848}
+      username: ${NACOS_USERNAME:nacos}
+      password: ${NACOS_PASSWORD:nacos}
+      discovery:
+        namespace: public
+        enabled: true
+        register-enabled: true
   
-  # 数据源配置 - 自身配置
   datasource:
     url: jdbc:postgresql://${DB_HOST:8.137.116.121}:${DB_PORT:8432}/${DB_NAME:business_db}?ssl=false
     username: ${DB_USERNAME:business}
@@ -19,17 +24,15 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: false
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
 
-# JWT 配置
+server:
+  port: ${SERVER_PORT:8082}
+
 config:
   jwt:
     secret: ${CONFIG_JWT_SECRET:ConfigServiceJWTSecretKey2024ChangeInProduction}
     expiration: ${CONFIG_JWT_EXPIRATION:86400000}
 
-# Actuator 配置
 management:
   endpoints:
     web:
@@ -39,7 +42,7 @@ management:
     health:
       show-details: always
 
-# 日志配置
 logging:
   level:
     com.example.config: INFO
+    com.alibaba.cloud.nacos: DEBUG
