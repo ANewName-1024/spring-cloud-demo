@@ -11,6 +11,7 @@
 - **运维模块 Phase 3 已完成** (任务调度 + 脚本执行 + 任务管理)
 - **自动修复模块 Phase 4 已完成** (AutoHealService + 策略管理)
 - **迭代升级模块 Phase 5 已完成** (GrayReleaseService + 灰度发布)
+- **平台集成 Phase 6 已完成** (RbacService + RBAC 权限管理)
 
 ### 安全实践
 - 敏感信息使用环境变量
